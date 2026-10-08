@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Nabung Kuy! - Pencatatan Keuangan Pribadi</title>
+  <meta name="description" content="Aplikasi pencatatan keuangan pribadi modern dengan tema dark purple fintech, multi rekening, upload struk, grafik interaktif, dan ekspor PDF & Excel.">
+  <meta name="theme-color" content="#0c0819">
+
+  <!-- Favicon: Piggy Bank Logo -->
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- SheetJS (XLSX) CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- jsPDF & AutoTable CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Application Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+  <div id="app-root">
+
+    <!-- ===================================================================
+         1. AUTHENTICATION WRAPPER (LOGIN & REGISTER)
+         =================================================================== -->
+    <div id="auth-wrapper" class="auth-wrapper">
+      <div class="auth-card">
+        <!-- Logo Image -->
+        <div class="auth-logo">
+          <img src="assets/logo.png" alt="Nabung Kuy! Logo">
+        </div>
+        <h1 class="auth-title">Nabung Kuy!</h1>
+        <p class="auth-subtitle">Kelola keuangan pribadi & wujudkan impian finansialmu</p>
+
+        <!-- Login Form Container (Username & Password Only) -->
+        <div id="login-form-container">
+          <form id="login-form">
+            <div class="form-group">
+              <label class="form-label" for="login-username">Username</label>
+              <input type="text" id="login-username" class="form-input" placeholder="Masukkan username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="login-password">Password</label>
+              <input type="password" id="login-password" class="form-input" placeholder="Masukkan password" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 14px;">
+              <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Masuk Sekarang
+            </button>
+          </form>
+
+          <p style="margin-top: 24px; font-size: 13px; color: var(--text-secondary);">
+            Belum punya akun? <a href="#" id="switch-to-register" style="color: var(--accent-purple-light); font-weight: 700; text-decoration: none;">Daftar Akun Baru</a>
+          </p>
+        </div>
+
+        <!-- Register Form Container (Username & Password Only) -->
+        <div id="register-form-container" style="display: none;">
+          <form id="register-form">
+            <div class="form-group">
+              <label class="form-label" for="reg-username">Username Baru</label>
+              <input type="text" id="reg-username" class="form-input" placeholder="Buat username unik" required minlength="3">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-password">Password Baru</label>
+              <input type="password" id="reg-password" class="form-input" placeholder="Buat password keamanan" required minlength="4">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 14px;">
+              <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Buat Akun & Masuk
+            </button>
+          </form>
+
+          <p style="margin-top: 24px; font-size: 13px; color: var(--text-secondary);">
+            Sudah punya akun? <a href="#" id="switch-to-login" style="color: var(--accent-purple-light); font-weight: 700; text-decoration: none;">Kembali ke Login</a>
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         2. APP SHELL (MAIN APPLICATION)
+         =================================================================== -->
+    <div id="app-shell" class="app-shell" style="display: none;">
+
+      <!-- Desktop Sidebar Navigation -->
+      <aside class="desktop-sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <img src="assets/logo.png" alt="Nabung Kuy! Logo">
+          </div>
+          <div class="brand-text">
+            <h2>Nabung Kuy!</h2>
+            <span>Smart Finance</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-menu">
+          <a class="nav-link active" data-view="home">
+            <i data-lucide="home"></i>
+            <span>Dashboard</span>
+          </a>
+          <a class="nav-link" data-view="wallet">
+            <i data-lucide="wallet"></i>
+            <span>Multi Rekening</span>
+          </a>
+          <a class="nav-link" data-view="transaksi">
+            <i data-lucide="arrow-left-right"></i>
+            <span>Riwayat Transaksi</span>
+          </a>
+          <a class="nav-link" data-view="grafik">
+            <i data-lucide="bar-chart-3"></i>
+            <span>Grafik Finansial</span>
+          </a>
+          <a class="nav-link" data-view="goals">
+            <i data-lucide="target"></i>
+            <span>Impian Menabung</span>
+          </a>
+          <a class="nav-link" data-view="laporan">
+            <i data-lucide="file-text"></i>
+            <span>Laporan & Ekspor</span>
+          </a>
+          <a class="nav-link" data-view="kategori">
+            <i data-lucide="tags"></i>
+            <span>Master Kategori</span>
+          </a>
+          <a class="nav-link nav-link-donate" data-view="donasi">
+            <i data-lucide="heart"></i>
+            <span>Donasi ❤️</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-user">
+          <div class="user-info">
+            <div class="user-avatar user-avatar-text">U</div>
+            <div>
+              <h4 class="user-fullname-text" style="font-size: 13.5px; font-weight: 700; color: #fff;">Pengguna</h4>
+              <span style="font-size: 11px; color: var(--text-secondary);">Akun Aktif</span>
+            </div>
+          </div>
+          <button class="icon-btn logout-btn" title="Keluar">
+            <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="main-wrapper">
+
+        <!-- Mobile Header (Tombol '+' Tunggal di Kanan Atas) -->
+        <header class="mobile-header">
+          <div class="header-user">
+            <img src="assets/logo.png" alt="Logo" style="width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--accent-purple);">
+            <div class="header-user-greet">
+              <span>Halo, <span class="user-fullname-text">Pengguna</span>!</span>
+              <h3>Nabung Kuy!</h3>
+            </div>
+          </div>
+          <div class="header-actions">
+            <!-- Tombol '+' Utama di Kanan Atas -->
+            <button class="icon-btn" title="Catat Transaksi Baru" style="background: var(--accent-purple); color: #fff; border-color: var(--accent-purple-light);" onclick="App.openAddTransactionModal('expense')">
+              <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
+            </button>
+            <button class="icon-btn logout-btn" title="Keluar">
+              <i data-lucide="power" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- Content Area Views -->
+        <div class="content-area">
+
+          <!-- ================= VIEW 1: HOME ================= -->
+          <section id="view-home" class="view-section active">
+            <!-- Balance Hero -->
+            <div class="card card-glass balance-hero">
+              <div class="balance-label">
+                <span>Total Saldo Tergabung</span>
+                <i data-lucide="shield-check" style="width: 14px; height: 14px; color: var(--accent-purple-light);"></i>
+              </div>
+              <div class="balance-amount-row">
+                <div id="hero-total-balance" class="balance-amount">Rp 0</div>
+                <div class="balance-change positive">
+                  <i data-lucide="trending-up" style="width: 13px; height: 13px;"></i> Terpantau
+                </div>
+              </div>
+
+              <!-- Mini Cashflow Summary -->
+              <div class="cashflow-mini">
+                <div class="cashflow-item">
+                  <div class="cashflow-icon inc">
+                    <i data-lucide="arrow-down-left"></i>
+                  </div>
+                  <div class="cashflow-info">
+                    <span>Masuk Bulan Ini</span>
+                    <strong id="hero-income-amount" style="color: var(--income-green);">Rp 0</strong>
+                  </div>
+                </div>
+                <div class="cashflow-item">
+                  <div class="cashflow-icon exp">
+                    <i data-lucide="arrow-up-right"></i>
+                  </div>
+                  <div class="cashflow-info">
+                    <span>Keluar Bulan Ini</span>
+                    <strong id="hero-expense-amount" style="color: var(--expense-red);">Rp 0</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Multi Rekening Section (Horizontal Cards) -->
+            <div class="section-header">
+              <h3 class="section-title">Rekening & Dompet</h3>
+              <button class="section-action" onclick="App.switchView('wallet')">
+                <span>Kelola</span>
+                <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+            <div class="accounts-carousel-wrapper">
+              <div id="accounts-carousel" class="accounts-cards-row">
+                <!-- Injected via JavaScript -->
+              </div>
+            </div>
+
+            <!-- Quick Action Row (Tanpa Tombol Transfer) -->
+            <div class="section-header">
+              <h3 class="section-title">Aksi Cepat</h3>
+            </div>
+            <div class="quick-actions-row">
+              <button class="action-pill" onclick="App.openAddTransactionModal('income')">
+                <div class="action-pill-icon" style="color: var(--income-green);">
+                  <i data-lucide="arrow-down-left"></i>
+                </div>
+                <span>Pemasukan</span>
+              </button>
+              <button class="action-pill" onclick="App.openAddTransactionModal('expense')">
+                <div class="action-pill-icon" style="color: var(--expense-red);">
+                  <i data-lucide="arrow-up-right"></i>
+                </div>
+                <span>Pengeluaran</span>
+              </button>
+              <button class="action-pill" onclick="App.switchView('goals')">
+                <div class="action-pill-icon" style="color: #d946ef;">
+                  <i data-lucide="target"></i>
+                </div>
+                <span>Goals</span>
+              </button>
+              <button class="action-pill" onclick="App.switchView('grafik')">
+                <div class="action-pill-icon" style="color: var(--accent-purple-light);">
+                  <i data-lucide="bar-chart-3"></i>
+                </div>
+                <span>Grafik</span>
+              </button>
+              <button class="action-pill" onclick="App.switchView('laporan')">
+                <div class="action-pill-icon" style="color: var(--warning-amber);">
+                  <i data-lucide="file-spreadsheet"></i>
+                </div>
+                <span>Laporan</span>
+              </button>
+            </div>
+
+            <!-- Recent Transactions Section -->
+            <div class="section-header" style="margin-top: 16px;">
+              <h3 class="section-title">Transaksi Terakhir</h3>
+              <button class="section-action" onclick="App.switchView('transaksi')">
+                <span>Semua Transaksi</span>
+                <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+            <div id="recent-tx-list" class="tx-list">
+              <!-- Injected via JavaScript -->
+            </div>
+          </section>
+
+          <!-- ================= VIEW 2: WALLET / REKENING ================= -->
+          <section id="view-wallet" class="view-section">
+            <div class="card card-glass" style="margin-bottom: 24px; text-align: center; padding: 28px 20px;">
+              <span style="font-size: 13px; color: var(--text-secondary);">Total Saldo Seluruh Rekening</span>
+              <div id="wallet-total-balance" style="font-size: 32px; font-weight: 800; color: var(--text-white); margin: 6px 0 16px;">Rp 0</div>
+              <button class="btn btn-primary btn-sm" onclick="App.openAddAccountModal()">
+                <i data-lucide="plus"></i> Tambah Rekening Baru
+              </button>
+            </div>
+
+            <div class="section-header">
+              <h3 class="section-title">Daftar Rekening & Dompet Aktif</h3>
+            </div>
+            <div id="wallet-accounts-list">
+              <!-- Injected via JavaScript -->
+            </div>
+          </section>
+
+          <!-- ================= VIEW 3: RIWAYAT TRANSAKSI ================= -->
+          <section id="view-transaksi" class="view-section">
+            <div class="card" style="margin-bottom: 20px; padding: 16px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px;">
+                <select id="tx-filter-type" class="form-select" style="padding: 9px 12px; font-size: 13px;">
+                  <option value="all">Semua Tipe Transaksi</option>
+                  <option value="income">Pemasukan Saja</option>
+                  <option value="expense">Pengeluaran Saja</option>
+                </select>
+                <select id="tx-filter-account" class="form-select" style="padding: 9px 12px; font-size: 13px;">
+                  <option value="all">Semua Rekening</option>
+                </select>
+                <select id="tx-filter-category" class="form-select" style="padding: 9px 12px; font-size: 13px;">
+                  <option value="all">Semua Kategori</option>
+                </select>
+              </div>
+              <div style="position: relative;">
+                <input type="text" id="tx-search-input" class="form-input" placeholder="Cari catatan transaksi..." style="padding-left: 38px;">
+                <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
+              </div>
+            </div>
+
+            <div class="section-header">
+              <h3 class="section-title">Semua Transaksi</h3>
+            </div>
+            <div id="all-transaction-list" class="tx-list">
+              <!-- Injected via JavaScript -->
+            </div>
+          </section>
+
+          <!-- ================= VIEW 4: GRAFIK & ANALISIS (LENGKAP DENGAN TOMBOL UNDUH PDF DI HP) ================= -->
+          <section id="view-grafik" class="view-section">
+            <!-- Akses Cepat Unduh Laporan PDF & Excel dari Halaman Grafik (Mudah ditemukan di HP) -->
+            <div class="card" style="margin-bottom: 18px; padding: 16px 20px; background: linear-gradient(135deg, rgba(36, 23, 72, 0.9), rgba(20, 14, 43, 0.95)); border-color: var(--accent-purple);">
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <h4 style="font-size: 15px; font-weight: 700; color: #fff;">Unduh Laporan Keuangan</h4>
+                  <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Cetak atau unduh laporan keuangan langsung dalam format PDF atau Excel</p>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; width: 100%;">
+                  <button class="btn btn-primary btn-sm trigger-export-pdf" style="background: linear-gradient(135deg, #e11d48, #be123c); flex: 1;">
+                    <i data-lucide="file-text"></i> Unduh PDF
+                  </button>
+                  <button class="btn btn-primary btn-sm trigger-export-excel" style="background: linear-gradient(135deg, #059669, #047857); flex: 1;">
+                    <i data-lucide="file-spreadsheet"></i> Unduh Excel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-glass" style="margin-bottom: 24px;">
+              <div class="section-header" style="margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                <h3 class="section-title">Tren Arus Kas (Cashflow)</h3>
+                <div class="chart-filter-pills">
+                  <button class="filter-pill" data-period="daily">Harian</button>
+                  <button class="filter-pill active" data-period="monthly">Bulanan</button>
+                  <button class="filter-pill" data-period="yearly">Tahunan</button>
+                </div>
+              </div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+                Perbandingan total pemasukan dan pengeluaran pada periode terpilih
+              </p>
+              <div class="chart-canvas-container">
+                <canvas id="cashflow-chart-canvas"></canvas>
+              </div>
+            </div>
+
+            <div class="card card-glass">
+              <div class="section-header">
+                <h3 class="section-title">Distribusi Pengeluaran per Kategori</h3>
+              </div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+                Alokasi porsi pos belanja dan pengeluaran Anda
+              </p>
+              <div class="chart-canvas-container" style="height: 260px;">
+                <canvas id="category-doughnut-canvas"></canvas>
+              </div>
+            </div>
+          </section>
+
+          <!-- ================= VIEW 5: GOALS / IMPIAN MENABUNG ================= -->
+          <section id="view-goals" class="view-section">
+            <div class="card card-glass" style="margin-bottom: 24px; padding: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+              <div>
+                <h2 style="font-size: 19px; font-weight: 800; color: #fff;">Impian & Target Menabung</h2>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Wujudkan impian finansial dengan rencana menabung yang terukur</p>
+              </div>
+              <button class="btn btn-primary" onclick="App.openAddGoalModal()">
+                <i data-lucide="plus"></i> Buat Impian Baru
+              </button>
+            </div>
+
+            <div id="goals-grid" class="goals-grid">
+              <!-- Injected via JavaScript -->
+            </div>
+          </section>
+
+          <!-- ================= VIEW 6: LAPORAN & EKSPOR ================= -->
+          <section id="view-laporan" class="view-section">
+            <div class="card" style="margin-bottom: 24px;">
+              <h3 class="section-title" style="margin-bottom: 14px;">Filter & Unduh Laporan</h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label">Tanggal Mulai</label>
+                  <input type="date" id="report-start-date" class="form-input">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label">Tanggal Sampai</label>
+                  <input type="date" id="report-end-date" class="form-input">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label">Tipe Transaksi</label>
+                  <select id="report-type-filter" class="form-select">
+                    <option value="all">Semua Tipe</option>
+                    <option value="income">Pemasukan Saja</option>
+                    <option value="expense">Pengeluaran Saja</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label">Rekening</label>
+                  <select id="report-account-filter" class="form-select">
+                    <option value="all">Semua Rekening</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Export Buttons Row -->
+              <div style="display: flex; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--border-subtle); padding-top: 16px;">
+                <button id="export-pdf-btn" class="btn btn-primary" style="background: linear-gradient(135deg, #e11d48, #be123c);">
+                  <i data-lucide="file-text"></i> Unduh Laporan PDF
+                </button>
+                <button id="export-excel-btn" class="btn btn-primary" style="background: linear-gradient(135deg, #059669, #047857);">
+                  <i data-lucide="file-spreadsheet"></i> Unduh Laporan Excel (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary Preview Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+              <div class="card" style="border-left: 4px solid var(--income-green);">
+                <span style="font-size: 12px; color: var(--text-secondary);">Total Masuk</span>
+                <h3 id="report-sum-income" style="font-size: 19px; font-weight: 800; color: var(--income-green); margin-top: 4px;">Rp 0</h3>
+              </div>
+              <div class="card" style="border-left: 4px solid var(--expense-red);">
+                <span style="font-size: 12px; color: var(--text-secondary);">Total Keluar</span>
+                <h3 id="report-sum-expense" style="font-size: 19px; font-weight: 800; color: var(--expense-red); margin-top: 4px;">Rp 0</h3>
+              </div>
+              <div class="card" style="border-left: 4px solid var(--accent-purple);">
+                <span style="font-size: 12px; color: var(--text-secondary);">Arus Bersih</span>
+                <h3 id="report-sum-net" style="font-size: 19px; font-weight: 800; color: #fff; margin-top: 4px;">Rp 0</h3>
+              </div>
+            </div>
+
+            <!-- Table Preview -->
+            <div class="card" style="padding: 0;">
+              <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);">
+                <h4 style="font-size: 15px; font-weight: 700; color: #fff;">Pratinjau Data Laporan</h4>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Tanggal</th>
+                      <th>Tipe</th>
+                      <th>Kategori</th>
+                      <th>Rekening</th>
+                      <th>Catatan</th>
+                      <th>Nominal</th>
+                    </tr>
+                  </thead>
+                  <tbody id="report-table-body">
+                    <!-- Injected via JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ================= VIEW 7: MASTER KATEGORI ================= -->
+          <section id="view-kategori" class="view-section">
+            <div class="card card-glass" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+              <div>
+                <h2 style="font-size: 19px; font-weight: 800; color: #fff;">Master Kategori Transaksi</h2>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Atur pos pengeluaran dan pemasukan sesuai kebutuhan Anda</p>
+              </div>
+              <button class="btn btn-primary" onclick="App.openAddCategoryModal()">
+                <i data-lucide="plus"></i> Tambah Kategori Baru
+              </button>
+            </div>
+
+            <div id="categories-container">
+              <!-- Injected via JavaScript -->
+            </div>
+          </section>
+
+          <!-- ================= VIEW 8: DONASI ================= -->
+          <section id="view-donasi" class="view-section">
+            <!-- Hero Banner Donasi -->
+            <div class="donate-hero">
+              <div class="donate-hero-glow"></div>
+              <div class="donate-hero-content">
+                <div class="donate-icon-wrap">
+                  <i data-lucide="heart" style="width: 48px; height: 48px; color: #fff;"></i>
+                </div>
+                <h1 class="donate-hero-title">Dukung Pengembangan</h1>
+                <p class="donate-hero-subtitle">Nabung Kuy! dibuat dengan sepenuh hati secara gratis.<br>Jika aplikasi ini membantumu, pertimbangkan untuk mendukung pengembang agar bisa terus berkarya! 🚀</p>
+              </div>
+            </div>
+
+            <!-- Card Utama Donasi -->
+            <div class="donate-card-main">
+              <div class="donate-creator-row">
+                <div class="donate-creator-avatar">
+                  <img src="assets/nipp-avatar.png" alt="Nipp Suka Coding" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                </div>
+                <div class="donate-creator-info">
+                  <h3>Nipp Suka Coding</h3>
+                  <span>Developer &amp; Creator</span>
+                </div>
+                <div class="donate-creator-badge">
+                  <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                  <span>Creator</span>
+                </div>
+              </div>
+
+              <p class="donate-message">Setiap dukungan kecilmu sangat berarti dan memotivasi untuk terus mengembangkan fitur-fitur baru yang lebih keren dan bermanfaat. Terima kasih sudah menggunakan <strong>Nabung Kuy!</strong> 🙏</p>
+
+              <div class="donate-ways">
+                <div class="donate-way-item">
+                  <div class="donate-way-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i data-lucide="coffee" style="width: 20px; height: 20px; color: #fff;"></i>
+                  </div>
+                  <div class="donate-way-text">
+                    <strong>Traktir Kopi</strong>
+                    <span>Mulai dari nominal berapa pun</span>
+                  </div>
+                </div>
+                <div class="donate-way-item">
+                  <div class="donate-way-icon" style="background: linear-gradient(135deg, #ec4899, #be185d);">
+                    <i data-lucide="gift" style="width: 20px; height: 20px; color: #fff;"></i>
+                  </div>
+                  <div class="donate-way-text">
+                    <strong>Beri Hadiah</strong>
+                    <span>Berbagai metode donasi tersedia</span>
+                  </div>
+                </div>
+                <div class="donate-way-item">
+                  <div class="donate-way-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                    <i data-lucide="star" style="width: 20px; height: 20px; color: #fff;"></i>
+                  </div>
+                  <div class="donate-way-text">
+                    <strong>Beri Bintang</strong>
+                    <span>Tunjukkan dukunganmu</span>
+                  </div>
+                </div>
+              </div>
+
+              <a href="https://sociabuzz.com/nipp21" target="_blank" rel="noopener noreferrer" class="donate-cta-btn">
+                <i data-lucide="external-link" style="width: 20px; height: 20px;"></i>
+                <span>Donasi Sekarang via SociaBuzz</span>
+              </a>
+
+              <p class="donate-note">Donasi akan diterima langsung oleh developer. Aman &amp; terpercaya melalui platform SociaBuzz.</p>
+            </div>
+
+            <!-- Footer pesan -->
+            <div class="donate-footer-msg">
+              <i data-lucide="sparkles" style="width: 18px; height: 18px; color: var(--accent-purple-light);"></i>
+              <p>Terima kasih telah menjadi bagian dari perjalanan <strong>Nabung Kuy!</strong>. Bersama kita wujudkan finansial yang lebih sehat! 💜</p>
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+      <!-- ===================================================================
+           3. MOBILE BOTTOM NAVIGATION (SIMETRIS & RAPI TANPA TOMBOL DUPLIKAT)
+           =================================================================== -->
+      <nav class="mobile-bottom-nav">
+        <button class="bottom-nav-item active" data-view="home">
+          <i data-lucide="home"></i>
+          <span>Home</span>
+        </button>
+        <button class="bottom-nav-item" data-view="wallet">
+          <i data-lucide="wallet"></i>
+          <span>Wallet</span>
+        </button>
+        <button class="bottom-nav-item" data-view="transaksi">
+          <i data-lucide="arrow-left-right"></i>
+          <span>Riwayat</span>
+        </button>
+        <button class="bottom-nav-item" data-view="grafik">
+          <i data-lucide="pie-chart"></i>
+          <span>Grafik</span>
+        </button>
+        <button class="bottom-nav-item" data-view="goals">
+          <i data-lucide="target"></i>
+          <span>Goals</span>
+        </button>
+        <button class="bottom-nav-item" data-view="laporan">
+          <i data-lucide="file-text"></i>
+          <span>Laporan</span>
+        </button>
+        <button class="bottom-nav-item bottom-nav-donate" data-view="donasi">
+          <i data-lucide="heart"></i>
+          <span>Donasi</span>
+        </button>
+      </nav>
+
+    </div>
+
+    <!-- ===================================================================
+         4. MODAL DIALOGS
+         =================================================================== -->
+
+    <!-- Modal: Catat Transaksi Baru (+ Upload Struk) -->
+    <div id="add-transaction-modal" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Catat Transaksi</h3>
+          <button class="close-modal-btn"><i data-lucide="x"></i></button>
+        </div>
+
+        <!-- Segmented Toggle (Hanya Pengeluaran & Pemasukan) -->
+        <div class="segmented-control">
+          <button type="button" class="segmented-btn active type-expense" data-type="expense">Pengeluaran</button>
+          <button type="button" class="segmented-btn type-income" data-type="income">Pemasukan</button>
+        </div>
+
+        <form id="add-transaction-form">
+          <div class="form-group">
+            <label class="form-label" for="tx-amount">Nominal (Rp)</label>
+            <input type="text" id="tx-amount" class="form-input" placeholder="Contoh: 50.000" required style="font-size: 20px; font-weight: 700;">
+          </div>
+
+          <!-- Account selection -->
+          <div id="tx-account-group" class="form-group">
+            <label class="form-label" for="tx-account-select">Pilih Rekening / Dompet</label>
+            <select id="tx-account-select" class="form-select"></select>
+          </div>
+
+          <!-- Category selection -->
+          <div id="tx-category-group" class="form-group">
+            <label class="form-label" for="tx-category-select">Kategori Transaksi</label>
+            <select id="tx-category-select" class="form-select"></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="tx-date">Tanggal Transaksi</label>
+            <input type="date" id="tx-date" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="tx-note">Catatan / Keterangan</label>
+            <input type="text" id="tx-note" class="form-input" placeholder="Contoh: Belanja bulanan, bayar wifi...">
+          </div>
+
+          <!-- Upload Struk Attachment -->
+          <div class="form-group">
+            <label class="form-label">Bukti Transaksi / Foto Struk</label>
+            <div id="receipt-dropzone" class="receipt-dropzone">
+              <div id="receipt-dropzone-text">
+                <i data-lucide="camera" style="width: 28px; height: 28px; color: var(--accent-purple-light); margin-bottom: 6px;"></i>
+                <div style="font-size: 13px; font-weight: 600; color: var(--text-white);">Klik untuk Ambil / Upload Foto Struk</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">Mendukung kamera HP atau file gambar (JPG, PNG)</div>
+              </div>
+              <div id="receipt-preview-wrap" class="receipt-preview-wrap" style="display: none;">
+                <img id="receipt-preview-img" class="receipt-preview-img" src="" alt="Struk Preview">
+                <button type="button" id="remove-receipt-btn" class="remove-receipt-btn" title="Hapus Gambar">&times;</button>
+              </div>
+            </div>
+            <input type="file" id="tx-receipt-file" accept="image/*" capture="environment" style="display: none;">
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">
+            <i data-lucide="check"></i> Simpan Transaksi
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Lightbox Bukti Struk -->
+    <div id="receipt-lightbox-modal" class="modal-overlay">
+      <div class="modal-dialog" style="max-width: 600px; text-align: center;">
+        <div class="modal-header">
+          <h3>Bukti Struk Transaksi</h3>
+          <button class="close-modal-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div class="lightbox-content">
+          <img id="lightbox-image" class="lightbox-img" src="" alt="Foto Struk Transaksi">
+        </div>
+        <div style="margin-top: 16px; display: flex; justify-content: center; gap: 10px;">
+          <button class="btn btn-secondary btn-sm close-modal-btn">Tutup</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Tambah Rekening Baru (Tema Otomatis Berbeda & Tanpa Nomor Rekening) -->
+    <div id="add-account-modal" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Tambah Rekening / Dompet</h3>
+          <button class="close-modal-btn"><i data-lucide="x"></i></button>
+        </div>
+        <form id="add-account-form">
+          <div class="form-group">
+            <label class="form-label" for="acc-name">Nama Rekening / Dompet</label>
+            <input type="text" id="acc-name" class="form-input" placeholder="Contoh: BCA, Mandiri, GoPay, Dompet Tunai" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="acc-type">Tipe Rekening</label>
+            <select id="acc-type" class="form-select">
+              <option value="Bank">Bank (BCA, Mandiri, BRI, BNI, dll)</option>
+              <option value="E-Wallet">E-Wallet (GoPay, OVO, Dana, ShopeePay)</option>
+              <option value="Dompet Tunai">Dompet Tunai (Cash)</option>
+              <option value="Tabungan">Tabungan Khusus</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="acc-initial-balance">Saldo Awal (Rp)</label>
+            <input type="text" id="acc-initial-balance" class="form-input" placeholder="0" required>
+            <span style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: block;">Warna kartu akan otomatis ditentukan secara unik dan elegan.</span>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 14px;">
+            <i data-lucide="plus"></i> Tambah Rekening
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Detail Rekening (Bebas Slider Horizontal & Tanpa Nomor Rekening) -->
+    <div id="account-detail-modal" class="modal-overlay">
+      <div class="modal-dialog" style="max-width: 480px; overflow-x: hidden;">
+        <div class="modal-header">
+          <h3 id="acc-detail-name">Detail Rekening</h3>
+          <button class="close-modal-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div style="background: var(--bg-surface); padding: 18px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 13px; color: var(--text-secondary);">Tipe Rekening:</span>
+            <strong id="acc-detail-type" style="color: #fff;">-</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--border-subtle); align-items: baseline;">
+            <span style="font-size: 13px; color: var(--text-secondary);">Saldo Saat Ini:</span>
+            <strong id="acc-detail-balance" style="font-size: 18px; font-weight: 800; color: var(--income-green);">Rp 0</strong>
+          </div>
+        </div>
+
+        <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 12px;">Riwayat Transaksi Terkait</h4>
+        <!-- Container dengan overflow-x hidden dan smooth sleek scroll -->
+        <div id="acc-detail-tx-list" class="tx-list" style="max-height: 240px; overflow-y: auto; overflow-x: hidden; margin-bottom: 16px; padding-right: 2px;">
+          <!-- Injected via JavaScript -->
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+          <button id="acc-detail-delete-btn" class="btn btn-danger btn-sm">
+            <i data-lucide="trash-2"></i> Hapus Rekening
+          </button>
+          <button class="btn btn-secondary btn-sm close-modal-btn">Tutup</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Tambah Impian (Goal) Baru -->
+    <div id="add-goal-modal" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Tambah Impian Menabung</h3>
+          <button class="close-modal-btn"><i data-lucide="x"></i></button>
+        </div>
+        <form id="add-goal-form">
+          <div class="form-group">
+            <label class="form-label" for="goal-title">Nama Impian</label>
+            <input type="text" id="goal-title" class="form-input" placeholder="Contoh: Beli Laptop Baru, Liburan ke Bali" required>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="goal-category">Kategori Impian</label>
+              <input type="text" id="goal-category" class="form-input" placeholder="Elektronik, Traveling..." required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="goal-emoji">Ikon Emoji</label>
+              <input type="text" id="goal-emoji" class="form-input" value="🎯" required style="font-size: 18px; text-align: center;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="goal-target-amount">Target Nominal (Rp)</label>
+            <input type="text" id="goal-target-amount" class="form-input" placeholder="0" required style="font-size: 18px; font-weight: 700;">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="goal-target-date">Target Tanggal Tercapai (Opsional)</label>
+            <input type="date" id="goal-target-date" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="goal-color">Warna Aksen</label>
+            <input type="color" id="goal-color" value="#8c52ff" style="width: 100%; height: 40px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: transparent; cursor: pointer;">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">
+            <i data-lucide="check"></i> Simpan Impian
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Setor Tabungan ke Goal -->
+    <div id="deposit-goal-modal" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Setor Tabungan Impian</h3>
+          <button class="close-modal-btn"><i data-lucide="x"></i></button>
+        </div>
+        <form id="deposit-goal-form">
+          <input type="hidden" id="deposit-goal-id">
+          <div style="background: var(--bg-surface); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 16px;">
+            <span style="font-size: 12px; color: var(--text-secondary);">Target Impian:</span>
+            <h4 id="deposit-goal-title" style="font-size: 16px; font-weight: 700; color: #fff; margin-top: 2px;">-</h4>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="deposit-amount">Nominal Setoran (Rp)</label>
+            <input type="text" id="deposit-amount" class="form-input" placeholder="0" required style="font-size: 18px; font-weight: 700;">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="deposit-date">Tanggal Setor</label>
+            <input type="date" id="deposit-date" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="deposit-note">Catatan Setoran</label>
+            <input type="text" id="deposit-note" class="form-input" placeholder="Contoh: Sisa uang belanja, bonus lembur">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">
+            <i data-lucide="plus-circle"></i> Tambah ke Tabungan
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Riwayat Setoran Goal -->
+    <div id="goal-detail-modal" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 id="goal-detail-title">Detail Impian</h3>
+          <button class="close-modal-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div style="background: var(--bg-surface); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="font-size: 13px; color: var(--text-secondary);">Target:</span>
+            <strong id="goal-detail-target" style="color: #fff;">Rp 0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="font-size: 13px; color: var(--text-secondary);">Terkumpul:</span>
+            <strong id="goal-detail-current" style="color: var(--income-green);">Rp 0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 13px; color: var(--text-secondary);">Persentase:</span>
+            <strong id="goal-detail-percent" style="color: var(--accent-purple-light);">0%</strong>
+          </div>
+        </div>
+
+        <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 10px;">Riwayat Setoran Tabungan</h4>
+        <div id="goal-history-list" style="max-height: 240px; overflow-y: auto; overflow-x: hidden; margin-bottom: 16px;">
+          <!-- Injected via JavaScript -->
+        </div>
+
+        <button class="btn btn-secondary btn-block close-modal-btn">Tutup</button>
+      </div>
+    </div>
+
+    <!-- Modal: Tambah Master Kategori -->
+    <div id="add-category-modal" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Tambah Kategori Baru</h3>
+          <button class="close-modal-btn"><i data-lucide="x"></i></button>
+        </div>
+        <form id="add-category-form">
+          <div class="form-group">
+            <label class="form-label" for="cat-name">Nama Kategori</label>
+            <input type="text" id="cat-name" class="form-input" placeholder="Contoh: Belanja Online, Donasi..." required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cat-type">Jenis Transaksi</label>
+            <select id="cat-type" class="form-select">
+              <option value="expense">Pengeluaran</option>
+              <option value="income">Pemasukan</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pilih Ikon</label>
+            <div id="cat-icon-selector" style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 120px; overflow-y: auto; padding: 6px; background: rgba(140, 82, 255, 0.08); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <!-- Injected via JavaScript -->
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pilih Warna Badge</label>
+            <div id="cat-color-selector" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 6px;">
+              <!-- Injected via JavaScript -->
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">
+            <i data-lucide="plus"></i> Simpan Kategori
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <!-- Application Logic Modules -->
+  <script src="js/mockData.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/accounts.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/transactions.js"></script>
+  <script src="js/goals.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
